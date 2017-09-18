@@ -17,13 +17,13 @@ def parse_http_req(data):
 	return HttpRequest(*status_line.split(), headers)
 
 def build_response(req):
-	filepath = os.path.realpath(os.path.join(os.getcwd(), req.path[1:] or 'index.html'))
 	if not all([req.method, req.path, req.protocol]):
-		return HttpResponse(req.protocol, 400, 'Malformed request', '')
+		return HttpResponse(req.protocol, 400, 'Bad request', '')
+	filepath = os.path.realpath(os.path.join(os.getcwd(), req.path[1:] or 'index.html'))
 	if not filepath.startswith(os.getcwd()):
-		return HttpResponse(req.protocol, 401, 'Unauthorized', '')
+		return HttpResponse(req.protocol, 403, 'Forbidden', '')
 	elif not os.path.isfile(filepath):
-		return HttpResponse(req.protocol, 404, 'File not found', '')
+		return HttpResponse(req.protocol, 404, 'Not Found', '')
 	else:
 		with open(filepath, 'r') as f:
 			return HttpResponse(req.protocol, 200, 'OK', f.read())
