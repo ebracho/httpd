@@ -30,8 +30,9 @@ def build_response(req):
 
 def handle_conn(conn, addr):
 	with conn:
-		data = conn.recv(4096)
+		data = conn.recv(4096) # TODO: handle longer requests
 		req = parse_http_req(data.decode('utf-8'))
+		print(f'[{addr[0]}] {req.method} {req.location} {req.protocol}')
 		res = build_response(req)
 		conn.sendall(f'{res.protocol} {res.code} {res.msg}\n\n{res.body}'.encode())
 
@@ -40,5 +41,6 @@ PORT = 3333
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 	s.bind((HOST, PORT))
 	s.listen(1)
-	handle_conn(*s.accept())
+	while True:
+		handle_conn(*s.accept())
 
