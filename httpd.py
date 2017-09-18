@@ -34,7 +34,7 @@ def handle_conn(conn, addr):
 		req = parse_http_req(data.decode('utf-8'))
 		print(f'[{addr[0]}] {req.method} {req.path} {req.protocol}')
 		res = build_response(req)
-		conn.sendall(f'{res.protocol} {res.code} {res.msg}\n\n{res.body}'.encode())
+		conn.sendall(f'{res.protocol} {res.code} {res.msg}\n\n{res.body}'.encode('utf-8'))
 
 HOST = ''
 PORT = 3333
