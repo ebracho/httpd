@@ -5,7 +5,7 @@ import os
 from collections import namedtuple
 
 # namedtuples for now, will eventually move to classes
-HttpRequest = namedtuple('HttpRequest', ['method', 'location', 'protocol', 'headers'])
+HttpRequest = namedtuple('HttpRequest', ['method', 'path', 'protocol', 'headers'])
 HttpResponse = namedtuple('HttpResponse', ['protocol', 'code', 'msg', 'body'])
 
 def parse_http_req(data):
@@ -17,9 +17,9 @@ def parse_http_req(data):
 	return HttpRequest(*status_line.split(), headers)
 
 def build_response(req):
-	filepath = os.path.realpath(os.path.join(os.getcwd(), req.location[1:] or 'index.html'))
-	if not all([req.method, req.location, req.protocol]):
-		return HttpResponse(req.protocl, 400, 'Malformed request', '')
+	filepath = os.path.realpath(os.path.join(os.getcwd(), req.path[1:] or 'index.html'))
+	if not all([req.method, req.path, req.protocol]):
+		return HttpResponse(req.protocol, 400, 'Malformed request', '')
 	if not filepath.startswith(os.getcwd()):
 		return HttpResponse(req.protocol, 401, 'Unauthorized', '')
 	elif not os.path.isfile(filepath):
@@ -32,7 +32,7 @@ def handle_conn(conn, addr):
 	with conn:
 		data = conn.recv(4096) # TODO: handle longer requests
 		req = parse_http_req(data.decode('utf-8'))
-		print(f'[{addr[0]}] {req.method} {req.location} {req.protocol}')
+		print(f'[{addr[0]}] {req.method} {req.path} {req.protocol}')
 		res = build_response(req)
 		conn.sendall(f'{res.protocol} {res.code} {res.msg}\n\n{res.body}'.encode())
 
