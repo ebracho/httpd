@@ -2,7 +2,14 @@
 
 import socket
 import os
+import mimetypes
 from concurrent.futures import ThreadPoolExecutor
+
+
+HOST = ''
+PORT = 3333
+MAX_THREADS = 1024
+
 
 class Request:
 	def __init__(self, conn, addr):
@@ -38,19 +45,21 @@ class Response:
 		elif not os.path.isfile(fp):
 			return (self.req.protocol, 404, 'Not Found', {}, b'')
 		else:
-			with open(fp) as f:
-				body = f.read().encode('utf-8')
+			with open(fp, 'rb') as f:
+				body = f.read()
 				headers = {
 					'Content-Length': len(body),
-					'Content-Type': 'text/html; charset=utf-8'
 				}
+				content_type, _ = mimetypes.guess_type(fp)
+				if content_type:
+					headers['Content-Type'] = f'{content_type};'
 				return (self.req.protocol, 200, 'OK', headers, body)
 
 	def send(self):
 		with self.req.conn:
 			status_line = f'{self.protocol} {self.code} {self.msg}'
 			headers = [f'{k}: {v}' for k,v in self.headers.items()]
-			payload = ('\r\n'.join([status_line] + headers) + '\n\n').encode('utf-8') + self.body
+			payload = ('\r\n'.join([status_line] + headers) + '\r\n\r\n').encode('utf-8') + self.body
 			self.req.conn.sendall(payload)
 
 	def __str__(self):
@@ -63,13 +72,9 @@ def handle_conn(conn, addr):
 	res.send()
 
 
-HOST = ''
-PORT = 3333
-MAX_THREADS = 1024
-
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 	s.bind((HOST, PORT))
-	s.listen(MAX_THREADS)
+	s.listen(2)
 	with ThreadPoolExecutor(MAX_THREADS) as ex:
 		while True:
 			ex.submit(handle_conn, *s.accept())
